@@ -3,16 +3,6 @@ import 'package:glew/src/trackables/tracking_context.dart';
 import 'package:glew/src/trackables/tracking_context_consumer.dart';
 import 'package:sane_uuid/uuid.dart';
 
-/// Annotation to make sure to autoregister any trackable children inside.
-class TrackChildren {
-  const TrackChildren();
-}
-
-/// Annotation to register the JSON constructor with the deserialization system.
-class RegisterJSONConstructor {
-  const RegisterJSONConstructor();
-}
-
 /// TrackableState is the base class for a collection of one or more Trackables.
 /// Networked state objects should implement this class.
 class TrackableState implements Trackable, TrackingContextConsumer {
