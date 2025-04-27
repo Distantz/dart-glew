@@ -53,6 +53,8 @@ class GlewServer {
           client.sendNotification('syncDelta', delta);
         } catch (_) {}
       }
+
+      manager.clearOutgoingDelta();
     }
   }
 

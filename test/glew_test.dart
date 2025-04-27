@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:glew/glew.dart';
 import 'package:glew/src/network/client.dart';
@@ -420,11 +421,18 @@ void main() {
 
       serverInner = TestTwoValueState(stateID: Uuid.v4());
       serverContext.trackObject(serverInner);
+      serverContext.clearOutgoingDelta();
+
+      int port = Random().nextInt(1000) + 1000;
 
       server = GlewServer(rpcs, serverContext);
-      unawaited(server.run());
+      unawaited(server.run(port: port));
 
-      client = GlewClient.fromWebsocket(rpcs, clientContext);
+      client = GlewClient.fromWebsocket(
+        rpcs,
+        clientContext,
+        websocket: "ws://localhost:$port",
+      );
       client.listen();
     });
 
