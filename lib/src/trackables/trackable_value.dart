@@ -44,7 +44,12 @@ class TrackableValue<T> implements Trackable {
   }
 
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> getJson() {
     return {valueKey: _value};
+  }
+
+  @override
+  void setJson(dynamic json) {
+    _value = json[valueKey];
   }
 }

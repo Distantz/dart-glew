@@ -1,3 +1,4 @@
+import 'package:glew/src/trackables/trackable.dart';
 import 'package:glew/src/trackables/trackable_state.dart';
 import 'package:glew/src/trackables/trackable_value.dart';
 import 'package:glew/src/trackables/tracking_context_consumer.dart';
@@ -11,8 +12,11 @@ class TrackableStateReference<T extends TrackableState>
 
   TrackingContext context = EmptyTrackingContext();
 
-  TrackableStateReference(T? state)
-    : _stateID = TrackableValue(state?.stateID ?? Uuid.v4());
+  factory TrackableStateReference.fromState(T? state) {
+    return TrackableStateReference(state?.stateID ?? Uuid.v4());
+  }
+
+  TrackableStateReference(Uuid id) : _stateID = TrackableValue(id);
 
   @override
   T? get value {
@@ -42,11 +46,6 @@ class TrackableStateReference<T extends TrackableState>
   }
 
   @override
-  Map<String, dynamic> toJson() {
-    return _stateID.toJson();
-  }
-
-  @override
   void clearOutgoingDelta() {
     _stateID.clearOutgoingDelta();
   }
@@ -54,5 +53,15 @@ class TrackableStateReference<T extends TrackableState>
   @override
   void onNewContext(TrackingContext newContext) {
     context = newContext;
+  }
+
+  @override
+  Map<String, dynamic> getJson() {
+    return _stateID.getJson();
+  }
+
+  @override
+  void setJson(json) {
+    _stateID.value = Uuid.fromString(json);
   }
 }

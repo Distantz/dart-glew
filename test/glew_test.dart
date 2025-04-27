@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:glew/glew.dart';
 import 'package:glew/src/trackables/trackable_state_manager.dart';
 import 'package:glew/src/trackables/tracking_context.dart';
@@ -80,7 +82,7 @@ void main() {
     late TrackingContext context;
 
     setUp(() {
-      context = TrackableStateManager(deserializationFactories: {});
+      context = TrackableStateManager({});
       innerObj = TestTwoValueState(stateID: Uuid.v4());
       containingObj = TestReferencedState(stateID: Uuid.v4());
       context.trackObject(innerObj);
@@ -128,7 +130,7 @@ void main() {
     late TrackableStateManager context;
 
     setUp(() {
-      context = TrackableStateManager(deserializationFactories: {});
+      context = TrackableStateManager({});
       innerObj = TestTwoValueState(stateID: Uuid.v4());
     });
 
@@ -265,6 +267,107 @@ void main() {
         reason:
             "The track and untrack calls should've cancelled out any create/remove, but there should still be a change. Actual: ${context.getOutgoingDelta()}",
       );
+    });
+  });
+
+  group('Communication between two StateManagers', () {
+    late TrackableStateManager serverContext;
+    late TrackableStateManager clientContext;
+
+    late TestTwoValueState serverInner;
+
+    setUp(() {
+      final Map<String, TrackableState Function(Uuid stateID)> objectFactory = {
+        "TestTwoValueState": (state) => TestTwoValueState(stateID: state),
+      };
+
+      serverContext = TrackableStateManager(objectFactory);
+      clientContext = TrackableStateManager(objectFactory);
+      serverInner = TestTwoValueState(stateID: Uuid.v4());
+    });
+
+    test('Add object to server, reflects on client', () {
+      expect(serverContext.hasOutgoingDelta(), false);
+      expect(clientContext.hasOutgoingDelta(), false);
+
+      serverContext.trackObject(serverInner);
+      expect(serverContext.hasOutgoingDelta(), true);
+      expect(clientContext.hasOutgoingDelta(), false);
+
+      // Send delta to client
+      clientContext.applyIncomingDelta(serverContext.getOutgoingDelta());
+      clientContext.clearOutgoingDelta();
+      serverContext.clearOutgoingDelta();
+
+      expect(serverContext.hasOutgoingDelta(), false);
+      expect(clientContext.hasOutgoingDelta(), false);
+
+      var spawnedServer = serverContext.getSpawnedObjects();
+      var spawnedClient = clientContext.getSpawnedObjects();
+
+      // Both client and server should have ONE object, with the same UUID, but not the same hashcode.
+      expect(spawnedServer.length == 1, true);
+      expect(spawnedClient.length == 1, true);
+      expect(spawnedServer[0].stateID == spawnedClient[0].stateID, true);
+      expect(spawnedServer[0] != spawnedClient[0], true);
+    });
+
+    test('Change object on server, see delta on client', () {
+      serverContext.trackObject(serverInner);
+      clientContext.applyIncomingDelta(serverContext.getOutgoingDelta());
+      clientContext.clearOutgoingDelta();
+      serverContext.clearOutgoingDelta();
+
+      TestTwoValueState clientInner =
+          clientContext.getSpawnedObjects()[0] as TestTwoValueState;
+
+      // Change the inner.
+      serverInner.valueA.value = 2;
+      expect(
+        serverInner.valueA.value == 2,
+        true,
+        reason:
+            "Server inner has changed to two. Actual: ${serverInner.getJson()}",
+      );
+      expect(
+        clientInner.valueA.value == 0,
+        true,
+        reason: "Client inner hasn't changed. Actual: ${clientInner.getJson()}",
+      );
+
+      Map<String, dynamic> getDelta = serverContext.getOutgoingDelta();
+
+      // Delta should only be a change
+      expect(
+        getDelta[TrackableStateManager.changeKey] != null,
+        true,
+        reason: "Should only be a change delta: $getDelta",
+      );
+
+      expect(
+        getDelta[TrackableStateManager.createKey] == null,
+        true,
+        reason: "Should only be a change delta: $getDelta",
+      );
+
+      expect(
+        getDelta[TrackableStateManager.removeKey] == null,
+        true,
+        reason: "Should only be a change delta: $getDelta",
+      );
+
+      // Encode to JSON
+      // Then decode back
+      String json = jsonEncode(getDelta);
+      print(json);
+      Map<String, dynamic> convertedDelta = jsonDecode(json);
+
+      clientContext.applyIncomingDelta(convertedDelta);
+      clientContext.clearOutgoingDelta();
+      serverContext.clearOutgoingDelta();
+
+      expect(serverInner.valueA.value == 2, true);
+      expect(clientInner.valueA.value == 2, true);
     });
   });
 }

@@ -24,8 +24,8 @@ abstract class Trackable {
    */
 
   /// Create this object from a complete JSON definition.
-  Trackable.fromJson(Map<String, dynamic> json);
+  void setJson(dynamic json);
 
   /// Convert this object to a complete JSON definition.
-  Map<String, dynamic> toJson();
+  dynamic getJson();
 }

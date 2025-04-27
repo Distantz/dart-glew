@@ -11,8 +11,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
   final Map<Uuid, TrackableState> _trackedObjects = {};
 
   // A map of Type strings to Factory constructors for making state objects
-  final Map<String, TrackableState Function(Map<String, dynamic> map)>
-  _deserializationFactories;
+  final Map<String, TrackableState Function(Uuid stateID)> _objectFactory;
 
   /// Outgoing delta tracking for adding objects
   final List<TrackableState> _deltaOutgoingCreateList = [];
@@ -20,10 +19,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
   /// Outgoing delta tracking for removing objects
   final List<TrackableState> _deltaOutgoingRemoveList = [];
 
-  TrackableStateManager({
-    required Map<String, TrackableState Function(Map<String, dynamic>)>
-    deserializationFactories,
-  }) : _deserializationFactories = deserializationFactories;
+  TrackableStateManager(this._objectFactory);
 
   static const String createKey = "CREATE";
   static const String removeKey = "REMOVE";
@@ -113,9 +109,9 @@ class TrackableStateManager implements TrackingContext, Trackable {
 
   void parseCreates(Map<String, dynamic> creates) {
     creates.forEach((key, value) {
-      String type = value[TrackableState.typeKey];
-      TrackableState state = _deserializationFactories[type]!.call(value);
-      trackObject(state);
+      trackObject(
+        makeTrackableState(value[TrackableState.typeKey], key, value),
+      );
     });
   }
 
@@ -163,7 +159,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
     Map<String, dynamic> changes = {};
 
     for (TrackableState state in _deltaOutgoingCreateList) {
-      changes[state.stateID.toString()] = state.toJson();
+      changes[state.stateID.toString()] = state.getJson();
     }
 
     return changes;
@@ -220,15 +216,43 @@ class TrackableStateManager implements TrackingContext, Trackable {
         _trackedObjects.values.any((val) => val.hasOutgoingDelta());
   }
 
+  TrackableState makeTrackableState(String type, String uuid, dynamic json) {
+    TrackableState state = _objectFactory[type]!.call(Uuid.fromString(uuid));
+    state.setJson(json);
+    return state;
+  }
+
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> getJson() {
     Map<String, dynamic> children = {};
 
     _trackedObjects.forEach((key, value) {
-      children[key.toString()] = value.toJson();
+      children[key.toString()] = value.getJson();
     });
 
     return children;
+  }
+
+  @override
+  void setJson(json) {
+    // Somehow construct a bunch of JSON objects...
+    Map<String, dynamic> jsonObjects = json as Map<String, dynamic>;
+
+    jsonObjects.forEach((key, value) {
+      Uuid id = Uuid.fromString(key);
+
+      // Exists? Deserialise into THAT one.
+      if (_trackedObjects.containsKey(id)) {
+        _trackedObjects[id]!.setJson(value);
+      } else {
+        TrackableState state = makeTrackableState(
+          value[TrackableState.typeKey],
+          key,
+          json,
+        );
+        trackObject(state);
+      }
+    });
   }
 
   //#endregion

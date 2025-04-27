@@ -5,7 +5,7 @@ import 'package:sane_uuid/uuid.dart';
 
 /// TrackableState is the base class for a collection of one or more Trackables.
 /// Networked state objects should implement this class.
-class TrackableState implements Trackable, TrackingContextConsumer {
+abstract class TrackableState implements Trackable, TrackingContextConsumer {
   /// State ID is the UUID used in lookup to find this object. It is also used
   /// directly in Saving, Loading and Network identification.
   final Uuid stateID;
@@ -82,17 +82,24 @@ class TrackableState implements Trackable, TrackingContextConsumer {
   }
 
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> getJson() {
     Map<String, dynamic> json = {};
 
     // Add special TYPE string to help with deserialization.
     json[typeKey] = runtimeType.toString();
 
     _trackedChildren.forEach((key, value) {
-      json[key] = value.toJson();
+      json[key] = value.getJson();
     });
 
     return json;
+  }
+
+  @override
+  void setJson(dynamic json) {
+    _trackedChildren.forEach((key, value) {
+      value.setJson(json[key]);
+    });
   }
 
   @override
