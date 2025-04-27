@@ -27,7 +27,7 @@ class GlewRPC {
 
 /// Object base for a JSONRPC Peer service.
 /// Registers provided GlewRPCs on the given channel, with full auth support.
-abstract class GlewService extends Peer {
+class GlewService extends Peer {
   TrackingContext context;
   final WebSocketChannel channel;
 
@@ -43,6 +43,5 @@ abstract class GlewService extends Peer {
         return rpc.rpcLogic(this, context, params);
       });
     }
-    listen();
   }
 }

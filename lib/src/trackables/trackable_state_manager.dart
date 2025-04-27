@@ -248,7 +248,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
         TrackableState state = makeTrackableState(
           value[TrackableState.typeKey],
           key,
-          json,
+          value,
         );
         trackObject(state);
       }

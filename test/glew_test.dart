@@ -379,6 +379,7 @@ void main() {
     late GlewServer server;
     late GlewClient client;
     late TrackableStateManager serverContext;
+    late TestTwoValueState serverInner;
     late TrackableStateManager clientContext;
 
     setUp(() async {
@@ -402,6 +403,9 @@ void main() {
           rpcLogic: (peer, context, params) {
             // Contexts are managers.
             TrackableStateManager manager = context as TrackableStateManager;
+            print(
+              "INCOMING DELTA: ${params.asMap as Map<String, dynamic>} IS SERVER? ${context == serverContext}",
+            );
             manager.applyIncomingDelta(params.asMap as Map<String, dynamic>);
           },
         ),
@@ -414,24 +418,61 @@ void main() {
       serverContext = TrackableStateManager(objectFactory);
       clientContext = TrackableStateManager(objectFactory);
 
+      serverInner = TestTwoValueState(stateID: Uuid.v4());
+      serverContext.trackObject(serverInner);
+
       server = GlewServer(rpcs, serverContext);
       unawaited(server.run());
 
-      await Future.delayed(
-        Duration(milliseconds: 500),
-      ); // Give server time to start
-
       client = GlewClient.fromWebsocket(rpcs, clientContext);
-      await Future.delayed(Duration(milliseconds: 2000)); // Connect time
+      client.listen();
     });
 
     tearDown(() async {
       await server.shutdown();
     });
 
-    test('client can call server RPC', () async {
-      var json = await client.sendRequest("requestSyncState");
+    test('Client can sync', () async {
+      Map<String, dynamic> json = await client.sendRequest("requestSyncState");
+
       print(json);
+      expect(json.isNotEmpty, true);
+      clientContext.setJson(json);
+      expect(clientContext.getSpawnedObjects().isNotEmpty, true);
+    });
+
+    test('Client can sync AND get deltas', () async {
+      Map<String, dynamic> json = await client.sendRequest("requestSyncState");
+      clientContext.setJson(json);
+      expect(clientContext.getSpawnedObjects().isNotEmpty, true);
+
+      serverInner.valueA.value = 35;
+      serverInner.valueB.value = "Str";
+
+      // Sync every 1 second so we should have a sync by 2
+      await Future.delayed(Duration(milliseconds: 2000));
+
+      expect(clientContext.getSpawnedObjects().isNotEmpty, true);
+      TestTwoValueState clientInner =
+          clientContext.getSpawnedObjects()[0] as TestTwoValueState;
+
+      expect(
+        serverInner.valueA.value == clientInner.valueA.value,
+        true,
+        reason:
+            "Server inner and client inner should match: ${serverInner.getJson()} vs ${clientInner.getJson()}",
+      );
+      expect(
+        serverInner.valueB.value == clientInner.valueB.value,
+        true,
+        reason:
+            "Server inner and client inner should match: ${serverInner.getJson()} vs ${clientInner.getJson()}",
+      );
+      expect(
+        serverInner == clientInner,
+        false,
+        reason: "Server inner and client inner shouldn't be the same object.",
+      );
     });
   });
 }

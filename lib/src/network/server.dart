@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:glew/src/network/glew_server_service.dart';
 import 'package:glew/src/network/glew_service.dart';
 import 'package:glew/src/trackables/trackable_state_manager.dart';
 
@@ -13,7 +11,7 @@ class GlewServer {
   final List<GlewRPC> rpcs;
   final TrackableStateManager manager;
   final Duration deltaBroadcastInterval;
-  final List<GlewServerService> _clients = [];
+  final List<GlewService> _clients = [];
   late Timer timer;
 
   /// [rpcs]: RPCs to register for each client.
@@ -39,12 +37,10 @@ class GlewServer {
   }
 
   void _handleNewConnection(WebSocketChannel wsChannel) {
-    final service = GlewServerService(
-      wsChannel,
-      rpcs,
-      manager,
-      (service) => _clients.remove(service),
-    );
+    final service = GlewService(wsChannel, rpcs, manager);
+    service.listen().then((_) {
+      _clients.remove(service);
+    });
     _clients.add(service);
   }
 
@@ -52,7 +48,7 @@ class GlewServer {
     if (manager.hasOutgoingDelta() && _clients.isNotEmpty) {
       Map<String, dynamic> delta = manager.getOutgoingDelta();
 
-      for (var client in List<GlewServerService>.from(_clients)) {
+      for (var client in List<GlewService>.from(_clients)) {
         try {
           client.sendNotification('syncDelta', delta);
         } catch (_) {}
