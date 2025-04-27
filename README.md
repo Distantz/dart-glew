@@ -11,17 +11,17 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages). 
 -->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+Glew simplifies state management by taking a unified approach to server and client model code. Write once in Dart for both, or implement a server in any language; changes are communicated using consistent and readable JSON. Glew draws heavy inspiration from the library Mirror Networking for Unity.
 
 ## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- State tracking, including creation, destruction and changes to model objects.
+- An easy to extend interface for creating your own trackable types/fields.
+- Uses a form of delta compression, so only differences are sent.
+- Special wrapper for model references, with lookups based on UUIDs.
+  - This allows references to persist over both network and disk save/loads.
 
 ## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Simply install the package. The base package is for Dart specifically, but Flutter-specific code is planned to go into it's own small package.
 
 ## Usage
 
@@ -33,7 +33,4 @@ const like = 'sample';
 ```
 
 ## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+Glew wants to "glue" your server and client code together. Of course, networking code is also a bit "ew" so that's why it's named Glew!
