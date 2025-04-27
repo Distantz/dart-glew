@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:glew/glew.dart';
+import 'package:glew/src/network/client.dart';
+import 'package:glew/src/network/glew_service.dart';
+import 'package:glew/src/network/server.dart';
 import 'package:glew/src/trackables/trackable_state_manager.dart';
 import 'package:glew/src/trackables/tracking_context.dart';
 import 'package:sane_uuid/uuid.dart';
@@ -368,6 +372,66 @@ void main() {
 
       expect(serverInner.valueA.value == 2, true);
       expect(clientInner.valueA.value == 2, true);
+    });
+  });
+
+  group('GlewRPC system', () {
+    late GlewServer server;
+    late GlewClient client;
+    late TrackableStateManager serverContext;
+    late TrackableStateManager clientContext;
+
+    setUp(() async {
+      List<GlewRPC> rpcs = [
+        GlewRPC(
+          rpcID: "requestSyncState",
+          rpcLogic: (peer, context, params) {
+            return (context as TrackableStateManager).getJson();
+          },
+        ),
+        GlewRPC(
+          rpcID: "syncState",
+          rpcLogic: (peer, context, params) {
+            // Contexts are managers.
+            TrackableStateManager manager = context as TrackableStateManager;
+            manager.setJson(params.asMap as Map<String, dynamic>);
+          },
+        ),
+        GlewRPC(
+          rpcID: "syncDelta",
+          rpcLogic: (peer, context, params) {
+            // Contexts are managers.
+            TrackableStateManager manager = context as TrackableStateManager;
+            manager.applyIncomingDelta(params.asMap as Map<String, dynamic>);
+          },
+        ),
+      ];
+
+      final Map<String, TrackableState Function(Uuid stateID)> objectFactory = {
+        "TestTwoValueState": (state) => TestTwoValueState(stateID: state),
+      };
+
+      serverContext = TrackableStateManager(objectFactory);
+      clientContext = TrackableStateManager(objectFactory);
+
+      server = GlewServer(rpcs, serverContext);
+      unawaited(server.run());
+
+      await Future.delayed(
+        Duration(milliseconds: 500),
+      ); // Give server time to start
+
+      client = GlewClient.fromWebsocket(rpcs, clientContext);
+      await Future.delayed(Duration(milliseconds: 2000)); // Connect time
+    });
+
+    tearDown(() async {
+      await server.shutdown();
+    });
+
+    test('client can call server RPC', () async {
+      var json = await client.sendRequest("requestSyncState");
+      print(json);
     });
   });
 }

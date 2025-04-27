@@ -1,4 +1,3 @@
-import 'package:glew/src/trackables/trackable.dart';
 import 'package:glew/src/trackables/trackable_state.dart';
 import 'package:glew/src/trackables/trackable_value.dart';
 import 'package:glew/src/trackables/tracking_context_consumer.dart';
