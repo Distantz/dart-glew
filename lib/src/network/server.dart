@@ -28,8 +28,11 @@ class GlewServer {
       _handleNewConnection(webSocket);
     });
 
-    shelf_io.serve(handler, address, port).then((server) {
+    await shelf_io.serve(handler, address, port).then((server) {
       print('Serving at ws://${server.address.host}:${server.port}');
+
+      // Enable compression by default
+      server.autoCompress = true;
     });
 
     // Start polling deltas if provider exists
