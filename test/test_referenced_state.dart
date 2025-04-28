@@ -1,10 +1,13 @@
 import 'package:glew/glew.dart';
-
-import 'test_twovalue_state.dart';
+import 'package:glew/src/converters/uuid_converter.dart';
+import 'package:sane_uuid/uuid.dart';
 
 class TestReferencedState extends TrackableState {
-  TrackableStateReference<TestTwoValueState> ref =
-      TrackableStateReference.fromState(null);
+  // Make UUID. Use it's converter.
+  TrackableValue<Uuid> ref = TrackableValue(
+    Uuid.v4(),
+    converter: const UuidConverter(),
+  );
 
   @override
   void registerTrackableChildren() {

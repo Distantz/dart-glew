@@ -38,7 +38,7 @@ abstract class TrackableState implements Trackable, TrackingContextConsumer {
   void registerTrackableChildren() {}
 
   @override
-  void applyIncomingDelta(Map<String, dynamic> delta) {
+  void applyIncomingDelta(dynamic delta) {
     delta.forEach((key, value) {
       // Not recognised will simply return out. This could be changed to an
       // error instead.
@@ -46,7 +46,7 @@ abstract class TrackableState implements Trackable, TrackingContextConsumer {
         return;
       }
 
-      _trackedChildren[key]!.applyIncomingDelta(value as Map<String, dynamic>);
+      _trackedChildren[key]!.applyIncomingDelta(value);
     });
   }
 

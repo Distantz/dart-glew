@@ -10,10 +10,10 @@ abstract class Trackable {
   bool hasOutgoingDelta();
 
   /// Returns the outgoing delta of the object.
-  Map<String, dynamic> getOutgoingDelta();
+  dynamic getOutgoingDelta();
 
   /// Applies an incoming delta to the object.
-  void applyIncomingDelta(Map<String, dynamic> delta);
+  void applyIncomingDelta(dynamic delta);
 
   // Clears the outgoing delta on the object.
   void clearOutgoingDelta();

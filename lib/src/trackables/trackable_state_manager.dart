@@ -128,7 +128,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
   }
 
   @override
-  void applyIncomingDelta(Map<String, dynamic> delta) {
+  void applyIncomingDelta(dynamic delta) {
     // First, remove
     if (delta.containsKey(removeKey)) {
       parseRemoves(delta[removeKey]);

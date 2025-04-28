@@ -1,3 +1,5 @@
+import 'package:glew/src/converters/default_converter.dart';
+import 'package:glew/src/converters/json_converter.dart';
 import 'package:glew/src/trackables/trackable.dart';
 
 /// Defines a tracked single value.
@@ -11,7 +13,8 @@ class TrackableValue<T> implements Trackable {
   /// Get the currently stored value
   T get value => _value;
 
-  static const String valueKey = "value";
+  /// The serialization to use for the value
+  JsonConverter converter;
 
   /// Sets the value. Will apply a delta.
   set value(T newValue) {
@@ -20,17 +23,19 @@ class TrackableValue<T> implements Trackable {
     }
   }
 
-  TrackableValue(this._value) : _prevValue = _value;
+  /// Creates a trackable value, with a default value, and an optional custom JSON converter.
+  TrackableValue(this._value, {this.converter = const DefaultConverter()})
+    : _prevValue = _value;
 
   @override
-  void applyIncomingDelta(Map<String, dynamic> delta) {
-    _value = delta[valueKey] as T;
+  void applyIncomingDelta(dynamic delta) {
+    setJson(delta);
     _prevValue = _value;
   }
 
   @override
-  Map<String, dynamic> getOutgoingDelta() {
-    return {valueKey: _value};
+  dynamic getOutgoingDelta() {
+    return getJson();
   }
 
   @override
@@ -44,12 +49,12 @@ class TrackableValue<T> implements Trackable {
   }
 
   @override
-  Map<String, dynamic> getJson() {
-    return {valueKey: _value};
+  dynamic getJson() {
+    return converter.toJson(_value);
   }
 
   @override
   void setJson(dynamic json) {
-    _value = json[valueKey];
+    _value = converter.fromJson(json);
   }
 }

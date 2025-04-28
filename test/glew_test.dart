@@ -33,10 +33,9 @@ void main() {
 
     test('Change has proper delta', () {
       value.value = 1;
-      Map<String, dynamic> delta = value.getOutgoingDelta();
-      expect(delta.isEmpty, false);
-      expect(delta.containsKey(TrackableValue.valueKey), true);
-      expect(delta[TrackableValue.valueKey] == 1, true);
+      dynamic delta = value.getOutgoingDelta();
+      expect(delta != null, true);
+      expect(delta == 1, true);
     });
   });
 
@@ -64,9 +63,9 @@ void main() {
 
       expect(delta.isEmpty, false);
       expect(delta.containsKey("valueA"), true);
-      expect(delta["valueA"][TrackableValue.valueKey] == 1, true);
+      expect(delta["valueA"] == 1, true);
       expect(delta.containsKey("valueB"), true);
-      expect(delta["valueB"][TrackableValue.valueKey] == "Hello", true);
+      expect(delta["valueB"] == "Hello", true);
     });
 
     test('Change compresses delta', () {
@@ -76,7 +75,7 @@ void main() {
 
       expect(delta.isEmpty, false);
       expect(delta.containsKey("valueA"), true);
-      expect(delta["valueA"][TrackableValue.valueKey] == 1, true);
+      expect(delta["valueA"] == 1, true);
       expect(delta.containsKey("valueB"), false);
     });
   });
@@ -105,28 +104,35 @@ void main() {
     });
 
     test('Change has Delta', () {
-      containingObj.ref.value = innerObj;
+      containingObj.ref.value = innerObj.stateID;
       expect(containingObj.hasOutgoingDelta(), true);
-      expect(containingObj.ref.value!.hasOutgoingDelta(), false);
+      expect(
+        context
+            .lookupObject<TestTwoValueState>(containingObj.ref.value)!
+            .hasOutgoingDelta(),
+        false,
+      );
     });
 
     test('Change has proper delta', () {
       // Change the ref and a value inside the ref
-      containingObj.ref.value = innerObj;
+      containingObj.ref.value = innerObj.stateID;
       innerObj.valueA.value = 1;
 
       Map<String, dynamic> delta = containingObj.getOutgoingDelta();
 
+      delta = jsonDecode(jsonEncode(delta));
+
       expect(delta.isEmpty, false);
       expect(delta.keys.length, 1); // One key, our ref.
-      expect(delta["ref"][TrackableValue.valueKey] == innerObj.stateID, true);
+      expect(Uuid.fromString(delta["ref"]) == innerObj.stateID, true);
 
       // Check inner object for changes too
       delta = innerObj.getOutgoingDelta();
 
       expect(delta.isEmpty, false);
       expect(delta.keys.length, 1);
-      expect(delta["valueA"][TrackableValue.valueKey] == 1, true);
+      expect(delta["valueA"] == 1, true);
     });
   });
 
@@ -364,7 +370,6 @@ void main() {
       // Encode to JSON
       // Then decode back
       String json = jsonEncode(getDelta);
-      print(json);
       Map<String, dynamic> convertedDelta = jsonDecode(json);
 
       clientContext.applyIncomingDelta(convertedDelta);
@@ -404,9 +409,6 @@ void main() {
           rpcLogic: (peer, context, params) {
             // Contexts are managers.
             TrackableStateManager manager = context as TrackableStateManager;
-            print(
-              "INCOMING DELTA: ${params.asMap as Map<String, dynamic>} IS SERVER? ${context == serverContext}",
-            );
             manager.applyIncomingDelta(params.asMap as Map<String, dynamic>);
           },
         ),
@@ -442,8 +444,6 @@ void main() {
 
     test('Client can sync', () async {
       Map<String, dynamic> json = await client.sendRequest("requestSyncState");
-
-      print(json);
       expect(json.isNotEmpty, true);
       clientContext.setJson(json);
       expect(clientContext.getSpawnedObjects().isNotEmpty, true);
@@ -480,6 +480,11 @@ void main() {
         serverInner == clientInner,
         false,
         reason: "Server inner and client inner shouldn't be the same object.",
+      );
+      expect(
+        serverInner.stateID == clientInner.stateID,
+        true,
+        reason: "Server inner and client inner should share a UUID.",
       );
     });
   });
