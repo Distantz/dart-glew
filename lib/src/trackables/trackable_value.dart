@@ -56,5 +56,6 @@ class TrackableValue<T> implements Trackable {
   @override
   void setJson(dynamic json) {
     _value = converter.fromJson(json);
+    clearOutgoingDelta();
   }
 }

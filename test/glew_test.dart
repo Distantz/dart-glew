@@ -6,6 +6,7 @@ import 'package:glew/glew.dart';
 import 'package:glew/src/network/client.dart';
 import 'package:glew/src/network/glew_service.dart';
 import 'package:glew/src/network/server.dart';
+import 'package:glew/src/trackables/containers/trackable_map.dart';
 import 'package:glew/src/trackables/trackable_state_manager.dart';
 import 'package:glew/src/trackables/tracking_context.dart';
 import 'package:sane_uuid/uuid.dart';
@@ -64,7 +65,31 @@ void main() {
       value.removeWhere((val) => val < 3);
       dynamic delta = value.getOutgoingDelta();
       expect(delta != null, true);
-      print(delta);
+    });
+  });
+
+  group('Single map value checks', () {
+    late TrackableMap<int, String> value;
+
+    setUp(() {
+      value = TrackableMap();
+    });
+
+    test('No Change No Delta', () {
+      expect(value.hasOutgoingDelta(), false);
+    });
+
+    test('Change has Delta', () {
+      value[0] = "Hello World";
+      expect(value.hasOutgoingDelta(), true);
+    });
+
+    test('Change has proper delta', () {
+      value[0] = "Hello World 1";
+      value[1] = "Hello World 2";
+      value[0] = "Hello World Override";
+      dynamic delta = value.getOutgoingDelta();
+      expect(delta != null, true);
     });
   });
 
