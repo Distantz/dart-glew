@@ -107,21 +107,21 @@ class TrackableStateManager implements TrackingContext, Trackable {
   //#endregion
   //#region Trackable promises
 
-  void parseCreates(Map<String, dynamic> creates) {
+  void _parseCreates(Map<String, dynamic> creates) {
     creates.forEach((key, value) {
       trackObject(
-        makeTrackableState(value[TrackableState.typeKey], key, value),
+        _makeTrackableState(value[TrackableState.typeKey], key, value),
       );
     });
   }
 
-  void parseRemoves(List<String> removes) {
+  void _parseRemoves(List<String> removes) {
     for (String uuid in removes) {
       untrackObject(lookupObject(Uuid.fromString(uuid))!);
     }
   }
 
-  void parseChanges(Map<String, dynamic> changes) {
+  void _parseChanges(Map<String, dynamic> changes) {
     changes.forEach((key, value) {
       _trackedObjects[Uuid.fromString(key)]?.applyIncomingDelta(value);
     });
@@ -131,17 +131,17 @@ class TrackableStateManager implements TrackingContext, Trackable {
   void applyIncomingDelta(dynamic delta) {
     // First, remove
     if (delta.containsKey(removeKey)) {
-      parseRemoves(delta[removeKey]);
+      _parseRemoves(delta[removeKey]);
     }
 
     // Then, add
     if (delta.containsKey(createKey)) {
-      parseCreates(delta[createKey]);
+      _parseCreates(delta[createKey]);
     }
 
     // Then, deal with deltas
     if (delta.containsKey(changeKey)) {
-      parseChanges(delta[changeKey]);
+      _parseChanges(delta[changeKey]);
     }
   }
 
@@ -155,7 +155,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
     }
   }
 
-  Map<String, dynamic> deltaCreates() {
+  Map<String, dynamic> _deltaCreates() {
     Map<String, dynamic> changes = {};
 
     for (TrackableState state in _deltaOutgoingCreateList) {
@@ -165,7 +165,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
     return changes;
   }
 
-  List<String> deltaRemoves() {
+  List<String> _deltaRemoves() {
     return _deltaOutgoingRemoveList
         .map((item) => item.stateID.toString())
         .toList();
@@ -184,11 +184,11 @@ class TrackableStateManager implements TrackingContext, Trackable {
     Map<String, dynamic> thisDelta = {};
 
     if (_deltaOutgoingCreateList.isNotEmpty) {
-      thisDelta[createKey] = deltaCreates();
+      thisDelta[createKey] = _deltaCreates();
     }
 
     if (_deltaOutgoingRemoveList.isNotEmpty) {
-      thisDelta[removeKey] = deltaRemoves();
+      thisDelta[removeKey] = _deltaRemoves();
     }
 
     Map<String, dynamic> changes = {};
@@ -216,7 +216,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
         _trackedObjects.values.any((val) => val.hasOutgoingDelta());
   }
 
-  TrackableState makeTrackableState(String type, String uuid, dynamic json) {
+  TrackableState _makeTrackableState(String type, String uuid, dynamic json) {
     TrackableState state = _objectFactory[type]!.call(Uuid.fromString(uuid));
     state.setJson(json);
     return state;
@@ -245,7 +245,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
       if (_trackedObjects.containsKey(id)) {
         _trackedObjects[id]!.setJson(value);
       } else {
-        TrackableState state = makeTrackableState(
+        TrackableState state = _makeTrackableState(
           value[TrackableState.typeKey],
           key,
           value,

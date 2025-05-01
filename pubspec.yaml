@@ -9,6 +9,7 @@ environment:
 # Add regular dependencies here.
 dependencies:
   build: ^2.4.1
+  collection: ^1.19.1
   json_rpc_2: ^3.0.3
   sane_uuid: ^1.1.0
   shelf_web_socket: ^3.0.0

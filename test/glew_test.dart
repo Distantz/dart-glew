@@ -39,6 +39,35 @@ void main() {
     });
   });
 
+  group('Single list value checks', () {
+    late TrackableList<int> value;
+
+    setUp(() {
+      value = TrackableList();
+    });
+
+    test('No Change No Delta', () {
+      expect(value.hasOutgoingDelta(), false);
+    });
+
+    test('Change has Delta', () {
+      value.add(1);
+      expect(value.hasOutgoingDelta(), true);
+    });
+
+    test('Change has proper delta', () {
+      value.add(1);
+      value.add(2);
+      value.add(3);
+      value.add(4);
+      value.add(5);
+      value.removeWhere((val) => val < 3);
+      dynamic delta = value.getOutgoingDelta();
+      expect(delta != null, true);
+      print(delta);
+    });
+  });
+
   group('Trackable State', () {
     TestTwoValueState value = TestTwoValueState(stateID: Uuid.v4());
 
