@@ -6,7 +6,6 @@ import 'package:glew/glew.dart';
 import 'package:glew/src/network/client.dart';
 import 'package:glew/src/network/glew_service.dart';
 import 'package:glew/src/network/server.dart';
-import 'package:glew/src/trackables/containers/trackable_map.dart';
 import 'package:glew/src/trackables/trackable_state_manager.dart';
 import 'package:glew/src/trackables/tracking_context.dart';
 import 'package:sane_uuid/uuid.dart';
@@ -88,6 +87,31 @@ void main() {
       value[0] = "Hello World 1";
       value[1] = "Hello World 2";
       value[0] = "Hello World Override";
+      dynamic delta = value.getOutgoingDelta();
+      expect(delta != null, true);
+    });
+  });
+
+  group('Single set value checks', () {
+    late TrackableSet<int> value;
+
+    setUp(() {
+      value = TrackableSet<int>();
+    });
+
+    test('No Change No Delta', () {
+      expect(value.hasOutgoingDelta(), false);
+    });
+
+    test('Change has Delta', () {
+      value.add(0);
+      expect(value.hasOutgoingDelta(), true);
+    });
+
+    test('Change has proper delta', () {
+      value.add(0);
+      value.add(1);
+      value.add(2);
       dynamic delta = value.getOutgoingDelta();
       expect(delta != null, true);
     });

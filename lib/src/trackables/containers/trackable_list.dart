@@ -7,9 +7,9 @@ class TrackableList<T> extends ListBase<T> implements Trackable {
   final List<T> _inner = [];
   final List<Map<String, dynamic>> _delta = [];
 
-  final JsonConverter converter;
+  final JsonConverter itemConverter;
 
-  TrackableList({this.converter = const DefaultConverter()});
+  TrackableList({this.itemConverter = const DefaultConverter()});
 
   static const String opKey = "o";
   static const String indexKey = "i";
@@ -80,7 +80,7 @@ class TrackableList<T> extends ListBase<T> implements Trackable {
   void _addDelta(TrackableListOperation op, {int? index, T? value}) {
     Map<String, dynamic> delta = {opKey: op.index};
     if (index != null) delta[indexKey] = index;
-    if (value != null) delta[valueKey] = converter.toJson(value);
+    if (value != null) delta[valueKey] = itemConverter.toJson(value);
     _delta.add(delta);
   }
 
@@ -92,7 +92,7 @@ class TrackableList<T> extends ListBase<T> implements Trackable {
 
   T getValFromDelta(dynamic delta) {
     dynamic valObj = delta[valueKey];
-    return valObj != null ? converter.fromJson(valObj) : null;
+    return valObj != null ? itemConverter.fromJson(valObj) : null;
   }
 
   int getIndexFromDelta(dynamic delta) {
@@ -128,10 +128,12 @@ class TrackableList<T> extends ListBase<T> implements Trackable {
   void setJson(dynamic json) {
     _inner
       ..clear()
-      ..addAll((json as List<dynamic>).map((json) => converter.fromJson(json)));
+      ..addAll(
+        (json as List<dynamic>).map((json) => itemConverter.fromJson(json)),
+      );
     clearOutgoingDelta();
   }
 
   @override
-  dynamic getJson() => _inner.map((obj) => converter.toJson(obj)).toList();
+  dynamic getJson() => _inner.map((obj) => itemConverter.toJson(obj)).toList();
 }
