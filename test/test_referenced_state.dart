@@ -1,5 +1,4 @@
 import 'package:glew/glew.dart';
-import 'package:glew/src/converters/uuid_converter.dart';
 import 'package:sane_uuid/uuid.dart';
 
 class TestReferencedState extends TrackableState {
@@ -10,9 +9,9 @@ class TestReferencedState extends TrackableState {
   );
 
   @override
-  void registerTrackableChildren() {
+  void onRegisterTrackableChildren() {
     registerTrackableChild("ref", ref);
   }
 
-  TestReferencedState({required super.stateID});
+  TestReferencedState(super.stateID, super.api);
 }

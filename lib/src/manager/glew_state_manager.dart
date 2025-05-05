@@ -1,12 +1,11 @@
 import 'package:glew/glew.dart';
-import 'package:glew/src/trackables/tracking_context.dart';
 import 'package:sane_uuid/uuid.dart';
 
-/// A context object which manages state objects.
+/// A state object which manages state objects.
 /// It provides its context object to those it tracks, and keeps a reference of
 /// each.
 /// It also exposes a Trackable API to allow for easy changes.
-class TrackableStateManager implements TrackingContext, Trackable {
+class GlewStateManager implements Trackable {
   /// Used to track objects within the state
   final Map<Uuid, TrackableState> _trackedObjects = {};
 
@@ -19,7 +18,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
   /// Outgoing delta tracking for removing objects
   final List<TrackableState> _deltaOutgoingRemoveList = [];
 
-  TrackableStateManager(this._objectFactory);
+  GlewStateManager(this._objectFactory);
 
   static const String createKey = "CREATE";
   static const String removeKey = "REMOVE";
@@ -52,10 +51,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
   ///   ...
   /// }
 
-  //#region Tracking Context promises
-
-  @override
-  bool trackObject(TrackableState object) {
+  bool registerStateObject(TrackableState object) {
     if (_trackedObjects.containsKey(object.stateID)) {
       return false;
     }
@@ -70,12 +66,10 @@ class TrackableStateManager implements TrackingContext, Trackable {
       _deltaOutgoingCreateList.add(object);
     }
 
-    object.onNewContext(this);
     return true;
   }
 
-  @override
-  bool untrackObject(TrackableState object) {
+  bool unregisterStateObject(TrackableState object) {
     if (!_trackedObjects.containsKey(object.stateID)) {
       return false;
     }
@@ -90,17 +84,14 @@ class TrackableStateManager implements TrackingContext, Trackable {
       _deltaOutgoingRemoveList.add(object);
     }
 
-    object.onNewContext(EmptyTrackingContext());
     return true;
   }
 
-  @override
-  T? lookupObject<T extends TrackableState>(Uuid id) {
+  T? lookupStateObject<T extends TrackableState>(Uuid id) {
     return _trackedObjects[id] as T;
   }
 
-  @override
-  List<TrackableState> getSpawnedObjects() {
+  List<TrackableState> getSpawnedStateObjects() {
     return List.unmodifiable(_trackedObjects.values);
   }
 
@@ -109,7 +100,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
 
   void _parseCreates(Map<String, dynamic> creates) {
     creates.forEach((key, value) {
-      trackObject(
+      registerStateObject(
         _makeTrackableState(value[TrackableState.typeKey], key, value),
       );
     });
@@ -117,7 +108,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
 
   void _parseRemoves(List<String> removes) {
     for (String uuid in removes) {
-      untrackObject(lookupObject(Uuid.fromString(uuid))!);
+      unregisterStateObject(lookupStateObject(Uuid.fromString(uuid))!);
     }
   }
 
@@ -143,6 +134,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
     if (delta.containsKey(changeKey)) {
       _parseChanges(delta[changeKey]);
     }
+    clearOutgoingDelta();
   }
 
   @override
@@ -250,7 +242,7 @@ class TrackableStateManager implements TrackingContext, Trackable {
           key,
           value,
         );
-        trackObject(state);
+        registerStateObject(state);
       }
     });
   }

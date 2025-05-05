@@ -4,9 +4,9 @@ class TestListState extends TrackableState {
   final TrackableList<int> list = TrackableList();
 
   @override
-  void registerTrackableChildren() {
+  void onRegisterTrackableChildren() {
     registerTrackableChild("list", list);
   }
 
-  TestListState({required super.stateID});
+  TestListState(super.stateID, super.api);
 }

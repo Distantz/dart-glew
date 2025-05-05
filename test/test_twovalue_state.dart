@@ -1,15 +1,15 @@
-import 'package:glew/src/trackables/trackable_state.dart';
-import 'package:glew/src/trackables/trackable_value.dart';
+import 'package:glew/src/trackable/trackable_state.dart';
+import 'package:glew/src/trackable/trackable_value.dart';
 
 class TestTwoValueState extends TrackableState {
   TrackableValue<int> valueA = TrackableValue(0);
   TrackableValue<String> valueB = TrackableValue("Hello World");
 
   @override
-  void registerTrackableChildren() {
+  void onRegisterTrackableChildren() {
     registerTrackableChild("valueA", valueA);
     registerTrackableChild("valueB", valueB);
   }
 
-  TestTwoValueState({required super.stateID});
+  TestTwoValueState(super.stateID, super.api);
 }
